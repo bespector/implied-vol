@@ -2,7 +2,7 @@
 
 """
 Example for Implied Volatility using nag4py
-Finds a zero of the Black Scholes function using c05auc and s30aac
+Finds a zero of the Black Scholes function using c05ayc and s30aac
 Data needs to be downloaded from:
 http://www.cboe.com/delayedquote/QuoteTableDownload.aspx
 """
@@ -15,7 +15,7 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import axes3d 
 from ctypes import POINTER, c_double, c_long, cast, py_object
 from nag4py.s import s30aac
-from nag4py.c05 import c05auc, NAG_C05AUC_FUN
+from nag4py.c05 import c05ayc, NAG_C05AYC_FUN
 from nag4py.e02 import e02cac, e02cbc
 from nag4py.util import NagError, Nag_Comm, Nag_RowMajor, Nag_Call, Nag_Put, Pointer
 
@@ -40,14 +40,12 @@ def callback(x, comm):
     underlying = userdata[3]
     current_price = userdata[4]
     out = c_double(0.0)
-   
-    # We cant have a negative volatility for the BS equation 
-    if (x <= 0):
-         x=.00001
+  
+    # NAG function call 
     s30aac(Nag_RowMajor, callput, 1, 1, strike, underlying, time, x, 0.0, 0.0, out, fail)
-    if(fail.code==0):
+    if(fail.code == 0):
         return out.value - current_price
-    #print fail.message
+    print fail.message
     return 0.0
 
 def calcvol(exp, strike, todays_date, underlying, current_price, callput):
@@ -59,17 +57,14 @@ def calcvol(exp, strike, todays_date, underlying, current_price, callput):
 
     volatility = c_double(.5)
     time = (exp - todays_date) / 365.0
-    lb = c_double(0.0)
-    ub = c_double(0.0)
-
     userdate = time, callput, strike, underlying, current_price
     comm = Nag_Comm()
     comm.p = cast(id(userdate), Pointer)
+    out=c_double(0.0)
+    pyfun = NAG_C05AYC_FUN(callback)
 
-    pyfun = NAG_C05AUC_FUN(callback)
-
-    c05auc(volatility, .1, .00001, 0.0, pyfun, lb, ub, comm, fail)
-
+    # NAG function call
+    c05ayc(0.00000001, 1.0, .00001, 0.0, pyfun, volatility, comm, fail)
     if (fail.code == 0):
         return volatility.value
     else:
@@ -174,6 +169,7 @@ def main():
     fig = plt.figure(1)
     fig.subplots_adjust(hspace=.4, wspace=.3)
 
+    # Plot the Volatility Curves
     # Encode graph layout: 3 rows, 3 columns, 1 is first graph.
     num = 331
     max_xticks = 4
@@ -182,11 +178,11 @@ def main():
         # add each subplot to the figure
         plot_year, plot_month = date.split()
         plot_date = (int(plot_year) - 13) * 365 + cumulative_month[plot_month]
-        plot_call = data[(data.impvolCall > 0) &
+        plot_call = data[(data.impvolCall > .01) &
                        (data.impvolCall < 1) &
                        (data.Expiration == plot_date) &
                        (data['Last Sale'] > 0)]
-        plot_put = data[(data.impvolPut > 0) &
+        plot_put = data[(data.impvolPut > .01) &
                         (data.impvolPut < 1) &
                         (data.Expiration == plot_date) &
                         (data['Last Sale.1'] > 0)]
@@ -207,7 +203,7 @@ def main():
                  (company, underlyingprice, qd_date))
     
 
-    print "\nPlotting Volatility Surface"  
+    print "\nPlotting Volatility Curves/Surface"  
     """
     The code below will plot the Volatility Surface
     It uses e02ca to fit with a polynomial and e02cb to evalute at 
@@ -229,48 +225,40 @@ def main():
     for date in dates:
         plot_year, plot_month = date.split()
         plot_date = (int(plot_year) - 13) * 365 + cumulative_month[plot_month]
-    
-        exp_sizes = (data[(data.Expiration == plot_date) &
-				(data.impvolCall > 0) & 
-				(data.impvolCall < 1) & 
-				(data['Last Sale'] > 0)]).Expiration.size
-
+        
+	call_data = data[(data.Expiration == plot_date) & 
+				(data.impvolPut > .01) & 
+				(data.impvolPut < 1) &
+                                (data['Last Sale.1'] > 0)]
+        
+	exp_sizes = call_data.Expiration.size
         if(exp_sizes > 0):       
         	m[i] = exp_sizes
         	n = len(dates)
 
         	if(i == 0):
-            		x = data[(data.Expiration == plot_date) & 
-				(data.impvolCall > 0) & 
-				(data.impvolCall < 1) & 
-				(data['Last Sale'] > 0)].Strike
-            		call = pandas.Series(data[(data.Expiration == plot_date) &
-						(data.impvolCall > 0) &
-						(data.impvolCall < 1) &
-						(data['Last Sale'] > 0)].impvolCall, dtype=numpy.double)
+            		x = call_data.Strike
+            		call = call_data.impvolPut
             		xmin[0] = x.min()
             		xmax[0] = x.max()
         	else:
-            		x2 = data[(data.Expiration == plot_date) &
-				(data.impvolCall > 0) &
-				(data.impvolCall < 1) &
-				(data['Last Sale'] > 0)].Strike
+            		x2 = call_data.Strike
             		x = x.append(x2)
-            		call2 = pandas.Series(data[(data.Expiration == plot_date) &
-						(data.impvolCall > 0) &
-						(data.impvolCall < 1) &
-						(data['Last Sale'] > 0)].impvolCall, dtype=numpy.double)
+            		call2 = call_data.impvolPut
  	    		call = call.append(call2)
             		xmin[i] = x2.min()
             		xmax[i] = x2.max()
         	y[i] = plot_date-today       
-        	i+=1
-    
+		i+=1 
+
     nux = numpy.zeros(1,dtype=numpy.double)
     nuy = numpy.zeros(1,dtype=numpy.double)
     inux = 1
     inuy = 1
-
+    
+    if(call.size == 0):
+	print "No data to plot"
+	return 0
     weight = numpy.ones(call.size, dtype=numpy.double)
     
     output_coef = (c_double * ((k + 1) * (l + 1)))(0.0)
@@ -289,17 +277,17 @@ def main():
  
     fail = NagError()    
     
-    #Call the NAG bi-cubic spline fitting function
+    #Call the NAG Chebyshev fitting function
     e02cac(mx,n,k,l,xx,yx,callx,weightx,output_coef,xminx,xmaxx,nuxx,inux,nuyx,inuy,fail)        
    
     if(fail.code != 0):
         print fail.message
+	return 0
 
     """
     Now that we have fit the function,
     we use e02cb to evaluate at different strikes/expirations 
     """
-
     nStrikes = 100 # number of Strikes to evaluate    
     spacing = 20 # number of Expirations to evaluate
     
@@ -345,7 +333,7 @@ def main():
     ax.plot_trisurf(xaxis, yaxis, zaxis, cmap=cm.jet)
     ax.set_xlabel('Strike Price')
     ax.set_ylabel('Days to Expiration')
-    ax.set_zlabel('Implied Volatility for Call Option')
+    ax.set_zlabel('Implied Volatility for Put Options')
     plt.suptitle('Implied Volatility Surface for %s Current Price: %s Date: %s' %
                  (company, underlyingprice, qd_date))
     
