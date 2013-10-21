@@ -230,7 +230,7 @@ def main():
 				(data.impvolPut > .01) & 
 				(data.impvolPut < 1) &
                                 (data['Last Sale.1'] > 0)]
-        
+         
 	exp_sizes = call_data.Expiration.size
         if(exp_sizes > 0):       
         	m[i] = exp_sizes
@@ -256,8 +256,8 @@ def main():
     inux = 1
     inuy = 1
     
-    if(call.size == 0):
-	print "No data to plot"
+    if(exp_sizes == 0):
+	print "No data to plot, check back at a later time when the CBOE is trading"
 	return 0
     weight = numpy.ones(call.size, dtype=numpy.double)
     
