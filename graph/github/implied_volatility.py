@@ -256,8 +256,8 @@ def main():
     inux = 1
     inuy = 1
     
-    if(exp_sizes == 0):
-	print "No data to plot, check back at a later time when the CBOE is trading"
+    if(len(dates) == i-1):
+	print "Error with data CBOE not trading now or one expiration has null data"
 	return 0
     weight = numpy.ones(call.size, dtype=numpy.double)
     
