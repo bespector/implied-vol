@@ -256,8 +256,8 @@ def main():
     inux = 1
     inuy = 1
     
-    if(len(dates) == i-1):
-	print "Error with data CBOE not trading now or one expiration has null data"
+    if(len(dates) != i):
+	print "Error with data: CBOE not trading now or one expiration has null data"
 	return 0
     weight = numpy.ones(call.size, dtype=numpy.double)
     
