@@ -245,7 +245,7 @@ def main():
             		x2 = call_data.Strike
             		x = x.append(x2)
             		call2 = call_data.impvolPut
- 	    		call = call.append(call2)
+			call = call.append(call2)
             		xmin[i] = x2.min()
             		xmax[i] = x2.max()
         	y[i] = plot_date-today       
