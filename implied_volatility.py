@@ -250,7 +250,7 @@ def main():
     inux = 1
     inuy = 1
 
-    if(n != i + 1):
+    if (n != i):
         sys.stderr.write("Error with data: the CBOE may not be open for trading or one expiration date has null data\n")
         return 1
 
