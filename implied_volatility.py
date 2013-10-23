@@ -19,7 +19,7 @@ from nag4py.c05 import c05ayc, NAG_C05AYC_FUN
 from nag4py.e02 import e02cac, e02cbc
 from nag4py.util import NagError, Nag_Comm, Nag_RowMajor, Nag_Call, Nag_Put, Pointer
 
-__author__ = "John Morrissey, Chris Seymour, and Brian Spector"
+__author__ = "John Morrissey and Brian Spector"
 __copyright__ = "Copyright 2013, The Numerical Algorithms Group Inc"
 __email__ = "support@nag.co.uk"
 
