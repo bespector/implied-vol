@@ -130,7 +130,7 @@ def main():
     data = data.fillna(0.0)
 
     # Let's look at data where there was a recent sale 
-    data = = data[data.Calls > 0]
+    data = data[data.Calls > 0]
     data = data[(data['Last Sale'] > 0) | (data['Last Sale.1'] > 0)]
 
     # Get the Options Expiration Date
