@@ -7,13 +7,14 @@ Data needs to be downloaded from:
 http://www.cboe.com/delayedquote/QuoteTableDownload.aspx
 """
 
-import os, sys
+import os,sys
 import pandas
 import numpy
 import matplotlib.pylab as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import axes3d 
 from ctypes import POINTER, c_double, c_long, cast, py_object
+from nag4py.a00 import a00acc
 from nag4py.s import s30aac
 from nag4py.c05 import c05ayc, NAG_C05AYC_FUN
 from nag4py.e02 import e02cac, e02cbc
@@ -93,6 +94,9 @@ def getstrike(x):
 
 def main():
 
+    if(a00acc() != 1):
+	print "Cannot find a valid NAG license"
+        return
     try:
         QuoteData = 'QuoteData.dat'
 #    except IndexError:
@@ -126,6 +130,7 @@ def main():
     data = data.fillna(0.0)
 
     # Let's look at data where there was a recent sale 
+    data = = data[data.Calls > 0]
     data = data[(data['Last Sale'] > 0) | (data['Last Sale.1'] > 0)]
 
     # Get the Options Expiration Date
