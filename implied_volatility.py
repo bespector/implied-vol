@@ -18,6 +18,7 @@ from nag4py.a00 import a00acc
 from nag4py.s import s30aac
 from nag4py.c05 import c05ayc, NAG_C05AYC_FUN
 from nag4py.e02 import e02cac, e02cbc
+from nag4py.x02 import x02bbc
 from nag4py.util import NagError, Nag_Comm, Nag_RowMajor, Nag_Call, Nag_Put, Pointer
 
 __author__ = "John Morrissey and Brian Spector"
@@ -48,6 +49,12 @@ def callback(x, comm):
         return out.value - current_price
     print fail.message
     return 0.0
+
+def get_nag_int_type():
+    naglib_maxint = x02bbc()
+    for int_try in [numpy.int32,numpy.int64]:
+    	if(naglib_maxint == numpy.iinfo(int_try).max):
+    		return int_try
 
 def calcvol(exp, strike, todays_date, underlying, current_price, callput):
     """
@@ -215,7 +222,7 @@ def main():
     intermediate points
     """ 
 
-    m = numpy.empty(len(dates), dtype=numpy.int32)
+    m = numpy.empty(len(dates), dtype=get_nag_int_type())
     y = numpy.empty(len(dates), dtype=numpy.double)
     xmin = numpy.empty(len(dates), dtype=numpy.double)    
     xmax = numpy.empty(len(dates), dtype=numpy.double)
