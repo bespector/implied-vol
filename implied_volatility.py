@@ -57,9 +57,9 @@ def get_nag_int_type():
     		return int_try
 def get_ctype():
     if(get_nag_int_type() == numpy.int32):
-    	return c_long
-    else:
     	return c_int
+    else:
+    	return c_long
 
 def calcvol(exp, strike, todays_date, underlying, current_price, callput):
     """
