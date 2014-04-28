@@ -13,7 +13,7 @@ import numpy
 import matplotlib.pylab as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import axes3d 
-from ctypes import POINTER, c_double, c_long, cast, py_object
+from ctypes import POINTER, c_double, c_long, c_int, cast, py_object
 from nag4py.a00 import a00acc
 from nag4py.s import s30aac
 from nag4py.c05 import c05ayc, NAG_C05AYC_FUN
@@ -55,6 +55,11 @@ def get_nag_int_type():
     for int_try in [numpy.int32,numpy.int64]:
     	if(naglib_maxint == numpy.iinfo(int_try).max):
     		return int_try
+def get_ctype():
+    if(get_nag_int_type() == numpy.int32):
+    	return c_long
+    else:
+    	return c_int
 
 def calcvol(exp, strike, todays_date, underlying, current_price, callput):
     """
@@ -277,7 +282,7 @@ def main():
 
     # To input data into NAG function we convert variables to ctypes
     
-    mx = m.ctypes.data_as(POINTER(c_long))
+    mx = m.ctypes.data_as(POINTER(get_ctype()))
     xx = x.ctypes.data_as(POINTER(c_double))
     yx = y.ctypes.data_as(POINTER(c_double))
     callx = call.ctypes.data_as(POINTER(c_double))
