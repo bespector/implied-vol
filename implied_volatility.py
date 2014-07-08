@@ -5,23 +5,34 @@ Example for Implied Volatility using nag4py
 Finds a zero of the Black Scholes function using c05ayc and s30aac
 Data needs to be downloaded from:
 http://www.cboe.com/delayedquote/QuoteTableDownload.aspx
+Make sure to download data during CBOE Trading Hours.
+
+Updated for nag4py-23.0
 """
 
-import os,sys
-import pandas
-import numpy
-import matplotlib.pylab as plt
-from matplotlib import cm
-from mpl_toolkits.mplot3d import axes3d 
-from ctypes import POINTER, c_double, c_long, cast, py_object
-from nag4py.a00 import a00acc
-from nag4py.s import s30aac
-from nag4py.c05 import c05ayc, NAG_C05AYC_FUN
-from nag4py.e02 import e02cac, e02cbc
-from nag4py.util import NagError, Nag_Comm, Nag_RowMajor, Nag_Call, Nag_Put, Pointer
+try:
+    import os,sys
+    import pandas
+    import numpy
+    import matplotlib.pylab as plt
+    from matplotlib import cm
+    from mpl_toolkits.mplot3d import axes3d 
+    from ctypes import cast, py_object
+    from nag4py.a00 import a00acc
+    from nag4py.s import s30aac
+    from nag4py.c05 import c05ayc
+    from nag4py.c05 import NAG_C05AYC_FUN
+    from nag4py.e02 import e02cac
+    from nag4py.e02 import e02cbc
+    from nag4py.util import Nag_Comm, Nag_RowMajor, Nag_Call, Nag_Put, Pointer, nag_int_type, Integer, noisy_fail, quiet_fail
+
+except ImportError as e:
+    print("Could not import the following module. Are you using the correct nag4py version?")
+    print e
+    sys.exit()
 
 __author__ = "John Morrissey and Brian Spector"
-__copyright__ = "Copyright 2013, The Numerical Algorithms Group Inc"
+__copyright__ = "Copyright 2014, The Numerical Algorithms Group Inc"
 __email__ = "support@nag.co.uk"
 
 
@@ -30,22 +41,23 @@ def callback(x, comm):
     Callback that calculates the Black Scholes Option Price for a given Volatility
     """
 
-    fail = NagError()
+    fail = noisy_fail()
 
     p_userdata = cast(comm[0].p, py_object)
     userdata = p_userdata.value
 
-    time = c_double(userdata[0])
+    time = numpy.array(userdata[0])
     callput = userdata[1]
-    strike = c_double(userdata[2])
+    strike = numpy.array(userdata[2])
     underlying = userdata[3]
     current_price = userdata[4]
-    out = c_double(0.0)
-  
+    out = numpy.array(0.0)
+    p_x = numpy.array(x,dtype=numpy.double)
+    
     # NAG function call 
-    s30aac(Nag_RowMajor, callput, 1, 1, strike, underlying, time, x, 0.0, 0.0, out, fail)
+    s30aac(Nag_RowMajor, callput, 1, 1, strike, underlying, time, p_x, 0.0, 0.0, out, fail)
     if(fail.code == 0):
-        return out.value - current_price
+        return out.item() - current_price
     print fail.message
     return 0.0
 
@@ -54,20 +66,20 @@ def calcvol(exp, strike, todays_date, underlying, current_price, callput):
     Root-finding method that calls NAG Library to calculate Implied Volatility
     """
 
-    fail = NagError()
+    fail = quiet_fail()
 
-    volatility = c_double(.5)
+    volatility = numpy.array(.5)
     time = (exp - todays_date) / 365.0
     userdate = time, callput, strike, underlying, current_price
     comm = Nag_Comm()
     comm.p = cast(id(userdate), Pointer)
-    out=c_double(0.0)
+
     pyfun = NAG_C05AYC_FUN(callback)
 
     # NAG function call
     c05ayc(0.00000001, 1.0, .00001, 0.0, pyfun, volatility, comm, fail)
     if (fail.code == 0):
-        return volatility.value
+        return volatility.item()
     else:
         return 0.0
 
@@ -78,18 +90,6 @@ cumulative_month = {'Jan': 31, 'Feb': 57, 'Mar': 90,
                     'Apr': 120, 'May': 151, 'Jun': 181,
                     'Jul': 212, 'Aug': 243, 'Sep': 273,
                     'Oct': 304, 'Nov': 334, 'Dec': 365}
-
-def getexpiration(x):
-    monthday = x.split()
-    adate = monthday[0] + ' ' + monthday[1]
-    if adate not in dates:
-        dates.append(adate)
-    return (int(monthday[0]) - 13) * 365 + cumulative_month[monthday[1]]
-
-
-def getstrike(x):
-    monthday = x.split()
-    return float(monthday[2])
 
 
 def main():
@@ -123,6 +123,18 @@ def main():
     underlyingprice = float(first[1])
     month, day = second[:2]
     today = cumulative_month[month] + int(day) - 30
+    current_year = int(second[2])
+
+    def getexpiration(x):
+        monthday = x.split()
+        adate = monthday[0] + ' ' + monthday[1]
+        if adate not in dates:
+            dates.append(adate)
+        return (int(monthday[0]) - (current_year % 2000)) * 365 + cumulative_month[monthday[1]]
+
+    def getstrike(x):
+        monthday = x.split()
+        return float(monthday[2])
 
     data = pandas.io.parsers.read_csv(QuoteData, sep=',', header=2, na_values=' ')
 
@@ -182,7 +194,7 @@ def main():
     for date in dates:
         # add each subplot to the figure
         plot_year, plot_month = date.split()
-        plot_date = (int(plot_year) - 13) * 365 + cumulative_month[plot_month]
+        plot_date = (int(plot_year) - (current_year % 2000)) * 365 + cumulative_month[plot_month]
         plot_call = data[(data.impvolCall > .01) &
                        (data.impvolCall < 1) &
                        (data.Expiration == plot_date) &
@@ -215,7 +227,7 @@ def main():
     intermediate points
     """ 
 
-    m = numpy.empty(len(dates), dtype=numpy.int32)
+    m = numpy.empty(len(dates), dtype=nag_int_type())
     y = numpy.empty(len(dates), dtype=numpy.double)
     xmin = numpy.empty(len(dates), dtype=numpy.double)    
     xmax = numpy.empty(len(dates), dtype=numpy.double)
@@ -229,7 +241,7 @@ def main():
 
     for date in dates:
         plot_year, plot_month = date.split()
-        plot_date = (int(plot_year) - 13) * 365 + cumulative_month[plot_month]
+        plot_date = (int(plot_year) - (current_year % 2000)) * 365 + cumulative_month[plot_month]
         
 	call_data = data[(data.Expiration == plot_date) & 
 				(data.impvolPut > .01) & 
@@ -242,15 +254,15 @@ def main():
         	n = len(dates)
 
         	if(i == 0):
-            		x = call_data.Strike
-            		call = call_data.impvolPut
+            		x = numpy.array(call_data.Strike)
+            		call = numpy.array(call_data.impvolPut)
             		xmin[0] = x.min()
             		xmax[0] = x.max()
         	else:
-            		x2 = call_data.Strike
-            		x = x.append(x2)
-            		call2 = call_data.impvolPut
-            		call = call.append(call2)
+            		x2 = numpy.array(call_data.Strike)
+            		x = numpy.append(x,x2)
+            		call2 = numpy.array(call_data.impvolPut)
+            		call = numpy.append(call,call2)
             		xmin[i] = x2.min()
             		xmax[i] = x2.max()
         	y[i] = plot_date-today       
@@ -260,35 +272,19 @@ def main():
     nuy = numpy.zeros(1,dtype=numpy.double)
     inux = 1
     inuy = 1
-    
+
     if(len(dates) != i):
 	print "Error with data: the CBOE may not be open for trading or one expiration date has null data"
 	return 0
     weight = numpy.ones(call.size, dtype=numpy.double)
-    
-    output_coef = (c_double * ((k + 1) * (l + 1)))(0.0)
 
-    # To input data into NAG function we convert variables to ctypes
-    
-    mx = m.ctypes.data_as(POINTER(c_long))
-    xx = x.ctypes.data_as(POINTER(c_double))
-    yx = y.ctypes.data_as(POINTER(c_double))
-    callx = call.ctypes.data_as(POINTER(c_double))
-    weightx = weight.ctypes.data_as(POINTER(c_double))
-    xminx = xmin.ctypes.data_as(POINTER(c_double))
-    xmaxx = xmax.ctypes.data_as(POINTER(c_double))
-    nuxx = nux.ctypes.data_as(POINTER(c_double))
-    nuyx = nuy.ctypes.data_as(POINTER(c_double))
- 
-    fail = NagError()    
+    output_coef = numpy.empty((k + 1) * (l + 1),dtype=numpy.double)
+     
+    fail = noisy_fail()    
     
     #Call the NAG Chebyshev fitting function
-    e02cac(mx,n,k,l,xx,yx,callx,weightx,output_coef,xminx,xmaxx,nuxx,inux,nuyx,inuy,fail)        
+    e02cac(m,n,k,l,x,y,call,weight,output_coef,xmin,xmax,nux,inux,nuy,inuy,fail)        
    
-    if(fail.code != 0):
-        print fail.message
-	return 0
-
     """
     Now that we have fit the function,
     we use e02cb to evaluate at different strikes/expirations 
@@ -309,11 +305,10 @@ def main():
       
         y = (ymin) + i * numpy.floor((ymax - ymin) / spacing) 
 
-        xx = x.ctypes.data_as(POINTER(c_double))
-	fx=(c_double * nStrikes)(0.0) 
-        fail=NagError()
+	fx=numpy.empty(nStrikes)
+        fail=quiet_fail()
 
-        e02cbc(mfirst,mlast,k,l,xx,xmin,xmax,y,ymin,ymax,fx,output_coef,fail)
+        e02cbc(mfirst,mlast,k,l,x,xmin,xmax,y,ymin,ymax,fx,output_coef,fail)
         
         if(fail.code != 0):
             print fail.message 
@@ -335,7 +330,15 @@ def main():
    
     fig = plt.figure(2)
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(xaxis, yaxis, zaxis, cmap=cm.jet)
+
+    # A try-except block for Matplotlib
+    try:
+        ax.plot_trisurf(xaxis, yaxis, zaxis, cmap=cm.jet)
+    except AttributeError:
+        print ("Your version of Matplotlib does not support plot_trisurf")
+        print ("...plotting wireframe instead")
+        ax.plot(xaxis, yaxis, zaxis)
+    
     ax.set_xlabel('Strike Price')
     ax.set_ylabel('Days to Expiration')
     ax.set_zlabel('Implied Volatility for Put Options')
