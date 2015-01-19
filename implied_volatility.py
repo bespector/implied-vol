@@ -28,7 +28,7 @@ try:
 
 except ImportError as e:
     print("Could not import the following module. Are you using the correct nag4py version?")
-    print e
+    print(e)
     sys.exit()
 
 __author__ = "John Morrissey and Brian Spector"
@@ -58,7 +58,7 @@ def callback(x, comm):
     s30aac(Nag_RowMajor, callput, 1, 1, strike, underlying, time, p_x, 0.0, 0.0, out, fail)
     if(fail.code == 0):
         return out.item() - current_price
-    print fail.message
+    print(fail.message)
     return 0.0
 
 def calcvol(exp, strike, todays_date, underlying, current_price, callput):
@@ -95,7 +95,7 @@ cumulative_month = {'Jan': 31, 'Feb': 57, 'Mar': 90,
 def main():
 
     if(a00acc() != 1):
-	print "Cannot find a valid NAG license"
+        print("Cannot find a valid NAG license")
         return
     try:
         QuoteData = 'QuoteData.dat'
@@ -112,7 +112,7 @@ def main():
     except:
         sys.stderr.write("Couldn't read %s" % QuoteData)
 
-    print "Implied Volatility for %s %s" % (qd_head[0].strip(), qd_head[1])
+    print("Implied Volatility for %s %s" % (qd_head[0].strip(), qd_head[1]))
 
     # Parse the header information in QuotaData
     first = qd_head[0].split(',')
@@ -142,7 +142,7 @@ def main():
     data = data.fillna(0.0)
 
     # Let's look at data where there was a recent sale 
-    data = data[data.Calls > 0]
+#    data = data[data.Calls > 0]
     data = data[(data['Last Sale'] > 0) | (data['Last Sale.1'] > 0)]
 
     # Get the Options Expiration Date
@@ -156,7 +156,7 @@ def main():
     data = data.join(exp)
     data = data.join(strike)
 
-    print 'Calculating Implied Vol of Calls...'
+    print('Calculating Implied Vol of Calls...')
     impvolcall = pandas.Series(pandas.np.zeros(len(data.index)),
                                index=data.index, name='impvolCall')
     for i in data.index:
@@ -166,10 +166,10 @@ def main():
                                  underlyingprice,
                                  (data.Bid[i] + data.Ask[i]) / 2, Nag_Call))
 
-    print 'Calculated Implied Vol for %d Calls' % len(data.index)
+    print('Calculated Implied Vol for %d Calls' % len(data.index))
     data = data.join(impvolcall)
 
-    print 'Calculating Implied Vol of Puts...'
+    print('Calculating Implied Vol of Puts...')
     impvolput = pandas.Series(numpy.zeros(len(data.index)),
                               index=data.index, name='impvolPut')
 
@@ -180,7 +180,7 @@ def main():
                                 underlyingprice,
                                 (data['Bid.1'][i] + data['Ask.1'][i]) / 2.0, Nag_Put))
 
-    print 'Calculated Implied Vol for %i Puts' % len(data.index)
+    print('Calculated Implied Vol for %i Puts' % len(data.index))
 
     data = data.join(impvolput)
     fig = plt.figure(1)
@@ -220,7 +220,7 @@ def main():
                  (company, underlyingprice, qd_date))
     
 
-    print "\nPlotting Volatility Curves/Surface"  
+    print("\nPlotting Volatility Curves/Surface")
     """
     The code below will plot the Volatility Surface
     It uses e02ca to fit with a polynomial and e02cb to evalute at 
@@ -243,39 +243,38 @@ def main():
         plot_year, plot_month = date.split()
         plot_date = (int(plot_year) - (current_year % 2000)) * 365 + cumulative_month[plot_month]
         
-	call_data = data[(data.Expiration == plot_date) & 
+        call_data = data[(data.Expiration == plot_date) & 
 				(data.impvolPut > .01) & 
 				(data.impvolPut < 1) &
                                 (data['Last Sale.1'] > 0)]
          
-	exp_sizes = call_data.Expiration.size
+        exp_sizes = call_data.Expiration.size
         if(exp_sizes > 0):       
-        	m[i] = exp_sizes
-        	n = len(dates)
+            m[i] = exp_sizes
+            n = len(dates)
 
-        	if(i == 0):
-            		x = numpy.array(call_data.Strike)
-            		call = numpy.array(call_data.impvolPut)
-            		xmin[0] = x.min()
-            		xmax[0] = x.max()
-        	else:
-            		x2 = numpy.array(call_data.Strike)
-            		x = numpy.append(x,x2)
-            		call2 = numpy.array(call_data.impvolPut)
-            		call = numpy.append(call,call2)
-            		xmin[i] = x2.min()
-            		xmax[i] = x2.max()
-        	y[i] = plot_date-today       
-		i+=1 
-
+            if(i == 0):
+                x = numpy.array(call_data.Strike)
+                call = numpy.array(call_data.impvolPut)
+                xmin[0] = x.min()
+                xmax[0] = x.max()
+            else:
+                x2 = numpy.array(call_data.Strike)
+                x = numpy.append(x,x2)
+                call2 = numpy.array(call_data.impvolPut)
+                call = numpy.append(call,call2)
+                xmin[i] = x2.min()
+                xmax[i] = x2.max()
+            y[i] = plot_date-today
+            i+=1
     nux = numpy.zeros(1,dtype=numpy.double)
     nuy = numpy.zeros(1,dtype=numpy.double)
     inux = 1
     inuy = 1
 
     if(len(dates) != i):
-	print "Error with data: the CBOE may not be open for trading or one expiration date has null data"
-	return 0
+        print("Error with data: the CBOE may not be open for trading or one expiration date has null data")
+        return 0
     weight = numpy.ones(call.size, dtype=numpy.double)
 
     output_coef = numpy.empty((k + 1) * (l + 1),dtype=numpy.double)
@@ -298,35 +297,35 @@ def main():
         xmin = data.Strike.min()
         xmax = data.Strike.max()
          
-	x = numpy.linspace(xmin, xmax, nStrikes)
+        x = numpy.linspace(xmin, xmax, nStrikes)
 
         ymin = data.Expiration.min() - today
         ymax = data.Expiration.max() - today
       
         y = (ymin) + i * numpy.floor((ymax - ymin) / spacing) 
 
-	fx=numpy.empty(nStrikes)
+        fx=numpy.empty(nStrikes)
         fail=quiet_fail()
 
         e02cbc(mfirst,mlast,k,l,x,xmin,xmax,y,ymin,ymax,fx,output_coef,fail)
         
         if(fail.code != 0):
-            print fail.message 
+            print(fail.message)
         
         if 'xaxis' in locals():
             xaxis = numpy.append(xaxis, x)
             temp = numpy.empty(len(x))
             temp.fill(y)
             yaxis = numpy.append(yaxis, temp)    
-	    for j in range(len(x)):
-		zaxis.append(fx[j])
+            for j in range(len(x)):
+                zaxis.append(fx[j])
         else:
             xaxis = x
             yaxis = numpy.empty(len(x), dtype=numpy.double)
             yaxis.fill(y)
             zaxis = []
-	    for j in range(len(x)):
-		zaxis.append(fx[j])
+            for j in range(len(x)):
+                zaxis.append(fx[j])
    
     fig = plt.figure(2)
     ax = fig.add_subplot(111, projection='3d')
