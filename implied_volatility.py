@@ -100,7 +100,7 @@ def main():
 
     try:
         if(len(sys.argv)>1):
-	    QuoteData = sys.argv[1]
+            QuoteData = sys.argv[1]
         else:
             QuoteData = 'QuoteData.dat'
 
