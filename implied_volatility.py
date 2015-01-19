@@ -110,7 +110,7 @@ def main():
         qd_head.append(qd.readline())
         qd.close()
     except:
-	sys.stderr.write("Usage: implied_volatility.py QuoteData.dat\n")
+        sys.stderr.write("Usage: implied_volatility.py QuoteData.dat\n")
         sys.stderr.write("Couldn't read QuoteData")
         sys.exit(1)
 
