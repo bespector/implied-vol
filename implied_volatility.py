@@ -29,7 +29,7 @@ try:
 except ImportError as e:
     print("Could not import the following module. Are you using the correct nag4py version?")
     print(e)
-    sys.exit()
+    sys.exit(1)
 
 __author__ = "John Morrissey and Brian Spector"
 __copyright__ = "Copyright 2014, The Numerical Algorithms Group Inc"
@@ -96,21 +96,23 @@ def main():
 
     if(a00acc() != 1):
         print("Cannot find a valid NAG license")
-        return
-    try:
-        QuoteData = 'QuoteData.dat'
-#    except IndexError:
-#        sys.stderr.write("Usage: imp_vol.py QuotaData.dat\n")
-#        sys.exit(1)
+        sys.exit(1)
 
-#        if os.path.isfile(QuoteData):
+    if(sys.argv[1]):
+	QuoteData = sys.argv[1]
+    else:
+        QuoteData = 'QuoteData.dat'
+
+    try:
         qd = open(QuoteData, 'r')
         qd_head = []
         qd_head.append(qd.readline())
         qd_head.append(qd.readline())
         qd.close()
     except:
+	sys.stderr.write("Usage: implied_volatility.py QuoteData.dat\n")
         sys.stderr.write("Couldn't read %s" % QuoteData)
+        sys.exit(1)
 
     print("Implied Volatility for %s %s" % (qd_head[0].strip(), qd_head[1]))
 
@@ -125,14 +127,14 @@ def main():
     today = cumulative_month[month] + int(day) - 30
     current_year = int(second[2])
 
-    def getexpiration(x):
+    def getExpiration(x):
         monthday = x.split()
         adate = monthday[0] + ' ' + monthday[1]
         if adate not in dates:
             dates.append(adate)
         return (int(monthday[0]) - (current_year % 2000)) * 365 + cumulative_month[monthday[1]]
 
-    def getstrike(x):
+    def getStrike(x):
         monthday = x.split()
         return float(monthday[2])
 
@@ -146,15 +148,14 @@ def main():
     data = data[(data['Last Sale'] > 0) | (data['Last Sale.1'] > 0)]
 
     # Get the Options Expiration Date
-    exp = data.Calls.apply(getexpiration)
+    exp = data.Calls.apply(getExpiration)
     exp.name = 'Expiration'
 
     # Get the Strike Prices
-    strike = data.Calls.apply(getstrike)
+    strike = data.Calls.apply(getStrike)
     strike.name = 'Strike'
 
-    data = data.join(exp)
-    data = data.join(strike)
+    data = data.join(exp).join(strike)
 
     print('Calculating Implied Vol of Calls...')
     impvolcall = pandas.Series(pandas.np.zeros(len(data.index)),
@@ -288,6 +289,7 @@ def main():
     Now that we have fit the function,
     we use e02cb to evaluate at different strikes/expirations 
     """
+
     nStrikes = 100 # number of Strikes to evaluate    
     spacing = 20 # number of Expirations to evaluate
     
