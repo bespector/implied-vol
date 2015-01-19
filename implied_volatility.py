@@ -111,7 +111,7 @@ def main():
         qd.close()
     except:
 	sys.stderr.write("Usage: implied_volatility.py QuoteData.dat\n")
-        sys.stderr.write("Couldn't read %s" % QuoteData)
+        sys.stderr.write("Couldn't read QuoteData")
         sys.exit(1)
 
     print("Implied Volatility for %s %s" % (qd_head[0].strip(), qd_head[1]))
