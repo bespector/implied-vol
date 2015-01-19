@@ -98,12 +98,12 @@ def main():
         print("Cannot find a valid NAG license")
         sys.exit(1)
 
-    if(sys.argv[1]):
-	QuoteData = sys.argv[1]
-    else:
-        QuoteData = 'QuoteData.dat'
-
     try:
+        if(len(sys.argv)>1):
+	    QuoteData = sys.argv[1]
+        else:
+            QuoteData = 'QuoteData.dat'
+
         qd = open(QuoteData, 'r')
         qd_head = []
         qd_head.append(qd.readline())
