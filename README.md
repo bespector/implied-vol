@@ -4,12 +4,12 @@ This code is to accompany the corresponding Numerical Algorithms Group (NAG) blo
 
 > http://blog.nag.com/2013/10/implied-volatility-using-pythons-pandas.html
 
-This script uses options data downloaded from the [CBOE] in csv format. Be sure to download data during CBOE trading hours to ensure the data is not null. To run type 
+This script uses options data downloaded from the [CBOE] in csv format. Be sure to download data during CBOE trading hours to ensure the graphs are not null. To run type 
 ```sh
 $ python implied_volatility.py QuoteData.dat
 ```
 
-This script has been tested with and requires the following packages/libraries:
+This script has been tested with the following packages:
 
   - Python 2.7 or 3.4
   - numpy 1.9.0
