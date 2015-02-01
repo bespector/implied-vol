@@ -13,12 +13,12 @@ This script has been tested with and requires the following packages/libraries:
   - numpy 1.9.0
   - pandas 0.14.1
   - matplotlib 1.4.2
-  - nag4py 23.0
+  - nag4py-23.0rc1
 
 A [NAG C Library] license is required to run the script. To obtain a free 30-day trial license, email support@nag.co.uk
 
-![Alt text](/VolatilityCurves.png?raw=true "Volatility Curves for AAPL")
-![Alt text](/VolatilitySurface.png?raw=true "Volatility Surface for AAPL")
+![Alt text](/pictures/VolatilityCurves.png?raw=true "Volatility Curves for AAPL")
+![Alt text](/pictures/VolatilitySurface.png?raw=true "Volatility Surface for AAPL")
 
 [NAG C Library]: http://www.nag.com/numeric/CL/CLdescription.asp
 [CBOE]: http://www.cboe.com/delayedquote/QuoteTableDownload.aspx
